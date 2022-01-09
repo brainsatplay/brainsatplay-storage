@@ -1,0 +1,31 @@
+{
+    "name": "brainsatplay-storage",
+    "version": "0.0.1",
+    "description": "IndexedDB (via BrowserFS), CSV, and Google Drive tools for Brainsatplay data",
+    "main": "index.js",
+    "directories": {
+        "example": "example"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/brainsatplay/brainsatplay-storage.git"
+    },
+    "keywords": [
+        "storage",
+        "browserfs",
+        "gdrive",
+        "gapi"
+    ],
+    "author": "Joshua Brewster",
+    "license": "AGPL-3.0-or-later",
+    "dependencies": {
+        "browserfs": "^1.4.3"
+    },
+    "bugs": {
+        "url": "https://github.com/brainsatplay/brainsatplay-storage/issues"
+    },
+    "homepage": "https://github.com/brainsatplay/brainsatplay-storage#readme"
+}
