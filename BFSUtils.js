@@ -249,7 +249,8 @@ export const listFiles = (dir='/data', onload=(directory)=>{},fs_html_id=undefin
  *  filename: 'filename',
  *  save: true, //will write a local CSV
  *  write:true, //will write to indexedDB, appending a file if it already exists
-*   header: ['timestamp','UTC','FP1','etc'],
+ *  dir: '/data', //directory if you want to save with browserfs
+ *  header: ['timestamp','UTC','FP1','etc'],
  *  data: [{ //order of data is order of columns 
  *      x: [], //e.g. utc times. Used to create rows of data with the first column set to this
  *      timestamp: [], //e.g. ISO timestamps
@@ -344,9 +345,9 @@ export const processDataForCSV = (options={}) => {
     if(options.write) {
         fs.exists(options.filename, (exists) => {
             if(exists) 
-                appendFile(options.filename, joined);
+                appendFile(options.filename, joined, options.dir);
             else
-                appendFile(options.filename, header+joined);
+                appendFile(options.filename, header+joined, options.dir);
         });
     }
 
