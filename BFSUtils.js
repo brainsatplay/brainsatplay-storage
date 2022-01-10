@@ -274,6 +274,11 @@ export const listFiles = (dir='/data', onload=(directory)=>{},fs_html_id=undefin
 //spits out an array of CSV rows in string format with endlines added
 export const processDataForCSV = (options={}) => {
     let header = '';
+    if(typeof data[0] === 'object' && !Array.isArray(data[0])){
+        if(data[0].x) header = 'x,';
+        else if (data[0].timestamp) header = 'timestamp,localtime,';
+    }
+
     let headeridx = 0;
     let lines = {}; //associative array (e.g. timestamp = row)
     options.data.forEach((obj, i) => {
@@ -296,10 +301,8 @@ export const processDataForCSV = (options={}) => {
             let x;
             if(obj.x) {
                x = obj.x; 
-               header[headeridx] = 'x,';
             } else if (obj.timestamp) {
                 x = obj.timestamp;
-                header[headeridx] = 'timestamp,localtime,'
             }
             for(let j = 0; j < x.length; j++) {
                 
