@@ -296,16 +296,17 @@ export const processDataForCSV = (options={}) => {
             let x;
             if(obj.x) {
                x = obj.x; 
+               header[headeridx] = 'x,';
             } else if (obj.timestamp) {
                 x = obj.timestamp;
+                header[headeridx] = 'timestamp,localtime,'
             }
             for(let j = 0; j < x.length; j++) {
-                if(j === 0) header[headeridx]
-                if(!lines[x[j]]) lines[x[j]] = '';
+                
+                if(!lines[x[j]]) lines[x[j]] = x[j] + ',';
                 if(obj.timestamp) {
-                    lines[x[j]] += toISOLocal(obj.timestamp[j]) + ',' + x[j] + ',';
-                } else 
-                    lines[x[j]] = x[j] + ',';
+                    lines[x[j]] += toISOLocal(obj.timestamp[j]) + ',';
+                } 
 
                 for(const prop in obj) {
                     if(prop !== 'x') {
