@@ -301,10 +301,11 @@ export const processDataForCSV = (options={}) => {
             }
             for(let j = 0; j < x.length; j++) {
                 if(j === 0) header[headeridx]
-                if(!lines[x[j]]) lines[x[j]] = x[j] + ',';
+                if(!lines[x[j]]) lines[x[j]] = '';
                 if(obj.timestamp) {
-                    lines[x[j]] += toISOLocal(obj.timestamp[j]) + ',';
-                }
+                    lines[x[j]] += toISOLocal(obj.timestamp[j]) + ',' + x[j] + ',';
+                } else 
+                    lines[x[j]] = x[j] + ',';
 
                 for(const prop in obj) {
                     if(prop !== 'x') {
