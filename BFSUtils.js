@@ -215,7 +215,7 @@ export const listFiles = (dir='/data', onload=(directory)=>{},fs_html_id=undefin
     });
 }
 
-//Write IndexedDB data into a CSV, in chunks to not overwhelm memory. This is for pre-processed data
+//Write IndexedDB data (preprocessed) into a CSV, in chunks to not overwhelm memory. This is for pre-processed data
 export const writeToCSVFromDB = async (filename='sessionName',dir='/data',fileSizeLimitMb=10) => {
     if (filename != ''){
         fs.stat(dir + '/' + filename, (e, stats) => {
