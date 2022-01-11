@@ -148,33 +148,6 @@ export const deleteFile = (path="/data/" + 'sessionName', ondelete=listFiles) =>
 }
 
 
-export const parseCSVData = (
-    data,
-    head,
-    filename,
-    hasend=true,
-    parser=(lines,head,filename) => { //generic parser for CSV files
-        let result = {filename:filename,head:head};
-        let headers = head; if(typeof head === 'string') headers = head.split(',');
-        for(let i = 0; i < lines.length; i++){
-            let line = lines[i].split(',');
-            for(let j = 0; j < line.length; j++){
-                if(!result[headers[j]]) result[headers[j]]
-                result[headers[j]] = line[j];
-            }
-        }
-    
-        return result; 
-    
-    }
-) => {
-    let lines = data.split('\n'); 
-    lines.shift(); 
-
-    if(hasend === false) lines.pop(); //pop last row if they are likely incomplete
-    let result = parser(lines,head,filename);
-    return result;
-}
 
 export const readFileAsText = (path, onread=(data,filename)=>{console.log(filename,data);}) => {
     fs.open(path, 'r', (e, fd) => {
@@ -240,6 +213,53 @@ export const listFiles = (dir='/data', onload=(directory)=>{},fs_html_id=undefin
             }
         }
     });
+}
+
+//Write IndexedDB data into a CSV, in chunks to not overwhelm memory. This is for pre-processed data
+export const writeToCSVFromDB = async (filename='sessionName',dir='/data',fileSizeLimitMb=10) => {
+    if (filename != ''){
+        fs.stat(dir + '/' + filename, (e, stats) => {
+            if (e) throw e;
+            let filesize = stats.size;
+            console.log(filesize)
+            fs.open(dir + '/' + filename, 'r', (e, fd) => {
+                if (e) throw e;
+                let i = 0;
+                let maxFileSize = fileSizeLimitMb * 1024 * 1024;
+                let end = maxFileSize;
+                if (filesize < maxFileSize) {
+                    end = filesize;
+                    fs.read(fd, end, 0, 'utf-8', (e, output, bytesRead) => {
+                        if (e) throw e;
+                        if (bytesRead !== 0) CSV.saveCSV(output.toString(), filename);
+                        fs.close(fd);
+                    });
+                }
+                else {
+                    const writeChunkToFile = async () => {
+                        if (i < filesize) {
+                            if (i + end > filesize) { end = filesize - i; }
+                            let chunk = 0;
+                            fs.read(fd, end, i, 'utf-8', (e, output, bytesRead) => {
+                                if (e) throw e;
+                                if (bytesRead !== 0) {
+                                    CSV.saveCSV(output.toString(), filename + "_" + chunk);
+                                    i += maxFileSize;
+                                    chunk++;
+                                    writeChunkToFile();
+                                    fs.close(fd);
+                                }
+                            });
+                        }
+                    }
+                }
+                //let file = fs.createWriteStream('./'+State.data.sessionName+'.csv');
+                //file.write(data.toString());
+            });
+        });
+    } else {
+        console.error('File name is not defined.')
+    }
 }
 
 //pass an object with settings and data to process into CSV format
@@ -359,53 +379,38 @@ export const processDataForCSV = (options={}) => {
     return result;
 }
 
-//Write IndexedDB data into a CSV, in chunks to not overwhelm memory. This is for pre-processed data
-export const writeToCSV = async (filename='sessionName',dir='/data',fileSizeLimitMb=10) => {
-    if (filename != ''){
-        fs.stat(dir + '/' + filename, (e, stats) => {
-            if (e) throw e;
-            let filesize = stats.size;
-            console.log(filesize)
-            fs.open(dir + '/' + filename, 'r', (e, fd) => {
-                if (e) throw e;
-                let i = 0;
-                let maxFileSize = fileSizeLimitMb * 1024 * 1024;
-                let end = maxFileSize;
-                if (filesize < maxFileSize) {
-                    end = filesize;
-                    fs.read(fd, end, 0, 'utf-8', (e, output, bytesRead) => {
-                        if (e) throw e;
-                        if (bytesRead !== 0) CSV.saveCSV(output.toString(), filename);
-                        fs.close(fd);
-                    });
-                }
-                else {
-                    const writeChunkToFile = async () => {
-                        if (i < filesize) {
-                            if (i + end > filesize) { end = filesize - i; }
-                            let chunk = 0;
-                            fs.read(fd, end, i, 'utf-8', (e, output, bytesRead) => {
-                                if (e) throw e;
-                                if (bytesRead !== 0) {
-                                    CSV.saveCSV(output.toString(), filename + "_" + chunk);
-                                    i += maxFileSize;
-                                    chunk++;
-                                    writeChunkToFile();
-                                    fs.close(fd);
-                                }
-                            });
-                        }
-                    }
-                }
-                //let file = fs.createWriteStream('./'+State.data.sessionName+'.csv');
-                //file.write(data.toString());
-            });
-        });
-    } else {
-        console.error('File name is not defined.')
+//e.g. let csv = CSV.openCSV(',',(data,head,path) => {
+//   let name = path.split('/').pop();
+//   result = parseCSVData(data,head,name);
+//   console.log(result);
+//})
+export const parseCSVData = (
+    data,
+    head,
+    filename,
+    hasend=true,
+    parser=(lines,head,filename) => { //generic parser for CSV files
+        let result = {filename:filename,head:head};
+        let headers = head; if(typeof head === 'string') headers = head.split(',');
+        for(let i = 0; i < lines.length; i++){
+            let line = lines[i].split(',');
+            for(let j = 0; j < line.length; j++){
+                if(!result[headers[j]]) result[headers[j]]
+                result[headers[j]] = line[j];
+            }
+        }
+    
+        return result; 
+    
     }
-}
+) => {
+    let lines = data.split('\n'); 
+    lines.shift(); 
 
+    if(hasend === false) lines.pop(); //pop last row if they are likely incomplete
+    let result = parser(lines,head,filename);
+    return result;
+}
 
 export function toISOLocal(d) { //pass in a new Date(utc timestamp) object
     var z  = n =>  ('0' + n).slice(-2);
