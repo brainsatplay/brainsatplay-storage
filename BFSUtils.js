@@ -155,7 +155,7 @@ export const parseCSVData = (
     hasend=true,
     parser=(lines,head,filename) => { //generic parser for CSV files
         let result = {filename:filename,head:head};
-        let headers = head.split(',');
+        let headers = head; if(typeof head === 'string') headers = head.split(',');
         for(let i = 0; i < lines.length; i++){
             let line = lines[i].split(',');
             for(let j = 0; j < line.length; j++){
@@ -171,7 +171,7 @@ export const parseCSVData = (
     let lines = data.split('\n'); 
     lines.shift(); 
 
-    if(hasend === false) lines.pop(); //pop first and last rows if they are likely incomplete
+    if(hasend === false) lines.pop(); //pop last row if they are likely incomplete
     let result = parser(lines,head,filename);
     return result;
 }
@@ -308,7 +308,7 @@ export const processDataForCSV = (options={}) => {
                 
                 if(!lines[x[j]]) lines[x[j]] = x[j] + ',';
                 if(obj.timestamp) {
-                    lines[x[j]] += toISOLocal(obj.timestamp[j]) + ',';
+                    lines[x[j]] += toISOLocal(obj.timestamp[j]) + ','; //add local timezone data
                 } 
 
                 for(const prop in obj) {
