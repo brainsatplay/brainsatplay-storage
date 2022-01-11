@@ -39,40 +39,40 @@ export const initFS = (oninit=()=>{}, onerror=()=>{}) => {
     }
 }
 
-export const readFiles = async (path) => {
+export const readFiles = async (filename='sessionName',dir='data') => {
     if (!fsInited) await initFS()
     return new Promise(resolve => {
-        fs.readdir(path, function(e, output) {
+        fs.readdir('/'+dir+'/'+filename, function(e, output) {
             resolve(output)
         });
     })
 }
 
-export const readFile = async (path) => {
+export const readFile = async (filename='sessionName',dir='data') => {
     if (!fsInited) await initFS()
     return new Promise(resolve => {
-        fs.readFile(path, function(e, output) {
+        fs.readFile('/'+dir+'/'+filename, function(e, output) {
             resolve(output)
         });
     })
 }
 
-export const saveFile = async (content, path) => {
+export const saveFile = async (content, filename='sessionName',dir='data') => {
     
     if (!fsInited) await initFS()
     // Assumes content is text
     return new Promise(async resolve => {
 
-        await _checkDirectoryExistence(fs, path.split('/')[1])
+        await _checkDirectoryExistence(fs, dir)
 
-        fs.writeFile(path,content,(e)=>{
+        fs.writeFile('/'+dir+'/'+filename,content,(e)=>{
             if(e) throw e;
             resolve(content)
         });
     })
 }
 
-let directories = {}
+let directories = {};
 export const _checkDirectoryExistence = (fs, directory) => {
     return new Promise(resolve => {
         if (directories[directory] === 'exists' || directories[directory] === 'created'){
@@ -112,33 +112,33 @@ export const getFilenames = (onload=(directory)=>{}, directory = '/data') => {
     });
 }
 
-export const getFileSize = (filename,dir='/data',onread=(size)=>{console.log(size);}) => {
-    fs.stat(dir + '/' +filename,(e,stats) => {
+export const getFileSize = (filename,dir='data',onread=(size)=>{console.log(size);}) => {
+    fs.stat('/'+dir + '/' +filename,(e,stats) => {
         if(e) throw e;
         let filesize = stats.size;
         onread(filesize);
     });
 }
 
-export const writeFile = (filename, data, dir='/data', onwrite=(data)=>{}) => {
-    fs.writeFile(dir+'/'+filename, data, (err) => {
+export const writeFile = (filename, data, dir='data', onwrite=(data)=>{}) => {
+    fs.writeFile('/'+dir+'/'+filename, data, (err) => {
         if (err) throw err;
         console.log('The "data to append" was appended to file!');
         onwrite(data);
     });
 }
 
-export const appendFile = (filename, data, dir='/data', onwrite=(data)=>{}) => {
-    fs.appendFile(dir+'/'+filename, data, (err) => {
+export const appendFile = (filename, data, dir='data', onwrite=(data)=>{}) => {
+    fs.appendFile('/'+dir+'/'+filename, data, (err) => {
         if (err) throw err;
         console.log('The "data to append" was appended to file!');
         onwrite(data);
     });
 }
 
-export const deleteFile = (path="/data/" + 'sessionName', ondelete=listFiles) => {
-    if (path != ''){
-        fs.unlink(path, (e) => {
+export const deleteFile = (filename='sessionName', dir='data', ondelete=listFiles) => {
+    if (filename != ''){
+        fs.unlink('/'+dir+'/'+filename, (e) => {
             if (e) console.error(e);
             ondelete();
         });
@@ -147,10 +147,9 @@ export const deleteFile = (path="/data/" + 'sessionName', ondelete=listFiles) =>
     }
 }
 
-
-
-export const readFileAsText = (path, onread=(data,filename)=>{console.log(filename,data);}) => {
-    fs.open(path, 'r', (e, fd) => {
+//read a browserfs file
+export const readFileAsText = (filename='sessionName.csv', dir='data', onread=(data,filename)=>{console.log(filename,data);}) => {
+    fs.open('/'+dir+'/'+filename, 'r', (e, fd) => {
         if (e) throw e;
         fs.read(fd, end, begin, 'utf-8', (er, output, bytesRead) => {
             if (er) throw er;
@@ -166,8 +165,8 @@ export const readFileAsText = (path, onread=(data,filename)=>{console.log(filena
 }
 
 
-export const getCSVHeader = (filename='', dir='/data', onopen=(header, filename)=>{console.log(header,filename);}) => {
-    fs.open(dir + '/' +filename,'r',(e,fd) => {
+export const getCSVHeader = (filename='', dir='data', onopen=(header, filename)=>{console.log(header,filename);}) => {
+    fs.open('/'+dir + '/' +filename,'r',(e,fd) => {
         if(e) throw e;
         fs.read(fd,65535,0,'utf-8',(er,output,bytesRead) => {  //could be a really long header for all we know
             if (er) throw er;
@@ -185,8 +184,8 @@ export const getCSVHeader = (filename='', dir='/data', onopen=(header, filename)
 }
 
 //
-export const listFiles = (dir='/data', onload=(directory)=>{},fs_html_id=undefined) => {
-    fs.readdir(dir, (e, directory) => {
+export const listFiles = (dir='data', onload=(directory)=>{},fs_html_id=undefined) => {
+    fs.readdir('/'+dir, (e, directory) => {
         if (e) throw e;
         if (directory) {
             console.log("files", directory);
@@ -216,9 +215,9 @@ export const listFiles = (dir='/data', onload=(directory)=>{},fs_html_id=undefin
 }
 
 //Write IndexedDB data (preprocessed) into a CSV, in chunks to not overwhelm memory. This is for pre-processed data
-export const writeToCSVFromDB = async (filename='sessionName',dir='/data',fileSizeLimitMb=10) => {
+export const writeToCSVFromDB = async (filename='sessionName',dir='data',fileSizeLimitMb=10) => {
     if (filename != ''){
-        fs.stat(dir + '/' + filename, (e, stats) => {
+        fs.stat('/' + dir + '/' + filename, (e, stats) => {
             if (e) throw e;
             let filesize = stats.size;
             console.log(filesize)
