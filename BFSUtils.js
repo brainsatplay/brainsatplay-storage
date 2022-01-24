@@ -10,7 +10,7 @@ const BFSBuffer = BrowserFS.BFSRequire('buffer').Buffer;
 
 
 // ----------------------------- Generic Functions for BrowserFS -----------------------------
-export const initFS = (oninit=()=>{}, onerror=()=>{}) => {
+export const initFS = async (oninit=()=>{}, onerror=()=>{}) => {
     if (fsInited) return true
     else {
     return new Promise (resolve => {
@@ -39,15 +39,6 @@ export const initFS = (oninit=()=>{}, onerror=()=>{}) => {
     }
 }
 
-export const readFiles = async (filename='sessionName',dir='data') => {
-    if (!fsInited) await initFS()
-    return new Promise(resolve => {
-        fs.readdir('/'+dir+'/'+filename, function(e, output) {
-            resolve(output)
-        });
-    })
-}
-
 export const readFile = async (filename='sessionName',dir='data') => {
     if (!fsInited) await initFS()
     return new Promise(resolve => {
@@ -55,6 +46,34 @@ export const readFile = async (filename='sessionName',dir='data') => {
             resolve(output)
         });
     })
+}
+
+
+export async function readFileChunk (filename='sessionName', dir='data', begin = 0, end = 5120, onread=(data)=>{}) {
+    
+    
+    if (filename != ''){
+        return new Promise(async resolve => { 
+            fs.open('/'+dir+'/' + filename, 'r', (e, fd) => {
+                if (e) throw e;
+
+                fs.read(fd, end, begin, 'utf-8', (er, output, bytesRead) => {
+                    if (er) throw er;
+                    if (bytesRead !== 0) {
+                        let data = output.toString();
+                    //Now parse the data back into the buffers.
+                        fs.close(fd, () => {
+                            onread(data,filename);
+                            resolve(data);
+                        });
+                    }
+                });
+            });
+        });
+    } else {
+        console.error('Path name is not defined')
+        return undefined;
+    }
 }
 
 export const saveFile = async (content, filename='sessionName',dir='data') => {
@@ -73,7 +92,7 @@ export const saveFile = async (content, filename='sessionName',dir='data') => {
 }
 
 let directories = {};
-export const _checkDirectoryExistence = (fs, directory) => {
+export const _checkDirectoryExistence = async (fs, directory) => {
     return new Promise(resolve => {
         if (directories[directory] === 'exists' || directories[directory] === 'created'){
             resolve()
@@ -103,163 +122,248 @@ export const _checkDirectoryExistence = (fs, directory) => {
 }
 
 export const getFilenames = (onload=(directory)=>{}, directory = '/data') => {
-    fs.readdir(directory, (e, dir) => {
-        if (e) throw e;
-        if (dir) {
-            console.log("files", dir);
-            onload(dir);
-        }
+    return new Promise(resolve => {
+        fs.readdir(directory, (e, dir) => {
+            if (e) throw e;
+            if (dir) {
+                console.log("files", dir);
+                onload(dir);
+                resolve(dir);
+            }
+        });
     });
 }
 
-export const getFileSize = (filename,dir='data',onread=(size)=>{console.log(size);}) => {
-    fs.stat('/'+dir + '/' +filename,(e,stats) => {
-        if(e) throw e;
-        let filesize = stats.size;
-        onread(filesize);
+export const getFileSize = async (filename,dir='data',onread=(size)=>{console.log(size);}) => {
+    return new Promise(resolve => {
+        fs.stat('/'+dir + '/' +filename,(e,stats) => {
+            if(e) throw e;
+            let filesize = stats.size;
+            onread(filesize);
+            resolve(filesize);
+        });
     });
 }
 
-export const writeFile = (filename, data, dir='data', onwrite=(data)=>{}) => {
-    fs.writeFile('/'+dir+'/'+filename, data, (err) => {
-        if (err) throw err;
-        console.log('The "data to append" was appended to file!');
-        onwrite(data);
+export const writeFile = async (filename, data, dir='data', onwrite=(data)=>{}) => {
+    return new Promise(resolve => {
+        fs.writeFile('/'+dir+'/'+filename, data, (err) => {
+            if (err) throw err;
+            console.log('The "data to append" was appended to file!');
+            onwrite(data);
+            resolve(true);
+        });
     });
 }
 
-export const appendFile = (filename, data, dir='data', onwrite=(data)=>{}) => {
-    fs.appendFile('/'+dir+'/'+filename, data, (err) => {
-        if (err) throw err;
-        console.log('The "data to append" was appended to file!');
-        onwrite(data);
+export const appendFile = async (filename, data, dir='data', onwrite=(data)=>{}) => {
+    return new Promise(resolve => {
+        fs.appendFile('/'+dir+'/'+filename, data, (err) => {
+            if (err) throw err;
+            console.log('The "data to append" was appended to file!');
+            onwrite(data);
+            resolve(true);
+        });
     });
 }
 
 export const deleteFile = (filename='sessionName', dir='data', ondelete=listFiles) => {
-    if (filename != ''){
-        fs.unlink('/'+dir+'/'+filename, (e) => {
-            if (e) console.error(e);
-            ondelete();
-        });
-    } else {
-        console.error('Path name is not defined')
-    }
+    return new Promise(resolve => {
+        if (filename != ''){
+            fs.unlink('/'+dir+'/'+filename, (e) => {
+                if (e) console.error(e);
+                ondelete();
+                resolve(true);
+            });
+        } else {
+            console.error('Path name is not defined')
+            resolve(false);
+        }
+    });
 }
 
 //read a browserfs file
-export const readFileAsText = (filename='sessionName.csv', dir='data', onread=(data,filename)=>{console.log(filename,data);}) => {
-    fs.open('/'+dir+'/'+filename, 'r', (e, fd) => {
-        if (e) throw e;
-        fs.read(fd, end, begin, 'utf-8', (er, output, bytesRead) => {
-            if (er) throw er;
-            if (bytesRead !== 0) {
-                let data = output.toString();
-                //Now parse the data back into the buffers.
-                fs.close(fd, () => {
-                    onread(data,filename);
-                });
-            };
+export const readFileAsText = async (filename='sessionName.csv', dir='data', onread=(data,filename)=>{console.log(filename,data);}) => {
+    return new Promise(resolve => {
+        fs.open('/'+dir+'/'+filename, 'r', (e, fd) => {
+            if (e) throw e;
+            fs.read(fd, end, begin, 'utf-8', (er, output, bytesRead) => {
+                if (er) throw er;
+                if (bytesRead !== 0) {
+                    let data = output.toString();
+                    //Now parse the data back into the buffers.
+                    fs.close(fd, () => {
+                        onread(data,filename);
+                        resolve(data);
+                    });
+                };
+            });
         });
     });
 }
 
 
-export const getCSVHeader = (filename='', dir='data', onopen=(header, filename)=>{console.log(header,filename);}) => {
-    fs.open('/'+dir + '/' +filename,'r',(e,fd) => {
-        if(e) throw e;
-        fs.read(fd,65535,0,'utf-8',(er,output,bytesRead) => {  //could be a really long header for all we know
-            if (er) throw er;
-            if(bytesRead !== 0) {
-                let data = output.toString();
-                let lines = data.split('\n');
-                let header = lines[0];
-                //Now parse the data back into the buffers.
-                fs.close(fd,()=>{   
-                    onopen(header, filename);
-                });
-            };
-        }); 
+export const getCSVHeader = async (filename='', dir='data', onopen=(header, filename)=>{console.log(header,filename);}) => {
+    
+    return new Promise(resolve => {
+        fs.open('/'+dir + '/' +filename,'r',(e,fd) => {
+            if(e) throw e;
+            fs.read(fd,65535,0,'utf-8',(er,output,bytesRead) => {  //could be a really long header for all we know
+                if (er) throw er;
+                if(bytesRead !== 0) {
+                    let data = output.toString();
+                    let lines = data.split('\n');
+                    let header = lines[0];
+                    //Now parse the data back into the buffers.
+                    fs.close(fd,()=>{   
+                        onopen(header, filename);
+                        resolve(header);
+                    });
+                };
+            }); 
+        });
     });
 }
 
 //
 export const listFiles = (dir='data', onload=(directory)=>{},fs_html_id=undefined) => {
-    fs.readdir('/'+dir, (e, directory) => {
-        if (e) throw e;
-        if (directory) {
-            console.log("files", directory);
-            onload(directory);
-            if(fs_html_id){
-                let filediv = document.getElementById(fs_html_id);
-                filediv.innerHTML = "";
-                directory.forEach((str, i) => {
-                    if (str !== "settings.json") {
-                        filediv.innerHTML += file_template({ id: str });
-                    }
-                });
-                directory.forEach((str, i) => {
-                    if (str !== "settings.json") {
-                        document.getElementById(str + "svg").onclick = () => {
-                            console.log(str);
-                            writeToCSV(str);
-                        }
-                        document.getElementById(str + "delete").onclick = () => {
-                            deleteFile(dir + '/' + str);
-                        }
-                    }
-                });
+    return new Promise(resolve => {
+        fs.readdir('/'+dir, (e, directory) => {
+            if (e) throw e;
+            if (directory) {
+                console.log("files", directory);
+                onload(directory);
+                // if(fs_html_id){
+                //     let filediv = document.getElementById(fs_html_id);
+                //     filediv.innerHTML = "";
+                //     directory.forEach((str, i) => {
+                //         if (str !== "settings.json") {
+                //             filediv.innerHTML += file_template({ id: str });
+                //         }
+                //     });
+                //     directory.forEach((str, i) => {
+                //         if (str !== "settings.json") {
+                //             document.getElementById(str + "svg").onclick = () => {
+                //                 console.log(str);
+                //                 writeToCSV(str);
+                //             }
+                //             document.getElementById(str + "delete").onclick = () => {
+                //                 deleteFile(dir + '/' + str);
+                //             }
+                //         }
+                //     });
+                // } 
             }
+            resolve(directory);
+        });
+    });
+    }
+
+    //Write IndexedDB data (preprocessed) into a CSV, in chunks to not overwhelm memory. This is for pre-processed data
+    export const writeToCSVFromDB = async (filename='sessionName',dir='data',fileSizeLimitMb=10) => {
+        return new Promise(resolve => {
+        if (filename != ''){
+            fs.stat('/' + dir + '/' + filename, (e, stats) => {
+                if (e) throw e;
+                let filesize = stats.size;
+                console.log(filesize)
+                fs.open(dir + '/' + filename, 'r', (e, fd) => {
+                    if (e) throw e;
+                    let i = 0;
+                    let maxFileSize = fileSizeLimitMb * 1024 * 1024;
+                    let end = maxFileSize;
+                    if (filesize < maxFileSize) {
+                        end = filesize;
+                        fs.read(fd, end, 0, 'utf-8', (e, output, bytesRead) => {
+                            if (e) throw e;
+                            if (bytesRead !== 0) CSV.saveCSV(output.toString(), filename);
+                            fs.close(fd);
+                            resolve(true);
+                        });
+                    }
+                    else {
+                        const writeChunkToFile = async () => {
+                            if (i < filesize) {
+                                if (i + end > filesize) { end = filesize - i; }
+                                let chunk = 0;
+                                fs.read(fd, end, i, 'utf-8', (e, output, bytesRead) => {
+                                    if (e) throw e;
+                                    if (bytesRead !== 0) {
+                                        CSV.saveCSV(output.toString(), filename + "_" + chunk);
+                                        i += maxFileSize;
+                                        chunk++;
+                                        writeChunkToFile();
+                                        fs.close(fd);
+                                        resolve(true);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    //let file = fs.createWriteStream('./'+State.data.sessionName+'.csv');
+                    //file.write(data.toString());
+                });
+            });
+        } else {
+            console.error('File name is not defined.');
+            resolve(false);
         }
     });
 }
 
-//Write IndexedDB data (preprocessed) into a CSV, in chunks to not overwhelm memory. This is for pre-processed data
-export const writeToCSVFromDB = async (filename='sessionName',dir='data',fileSizeLimitMb=10) => {
-    if (filename != ''){
-        fs.stat('/' + dir + '/' + filename, (e, stats) => {
-            if (e) throw e;
-            let filesize = stats.size;
-            console.log(filesize)
-            fs.open(dir + '/' + filename, 'r', (e, fd) => {
-                if (e) throw e;
-                let i = 0;
-                let maxFileSize = fileSizeLimitMb * 1024 * 1024;
-                let end = maxFileSize;
-                if (filesize < maxFileSize) {
-                    end = filesize;
-                    fs.read(fd, end, 0, 'utf-8', (e, output, bytesRead) => {
-                        if (e) throw e;
-                        if (bytesRead !== 0) CSV.saveCSV(output.toString(), filename);
-                        fs.close(fd);
-                    });
-                }
-                else {
-                    const writeChunkToFile = async () => {
-                        if (i < filesize) {
-                            if (i + end > filesize) { end = filesize - i; }
-                            let chunk = 0;
-                            fs.read(fd, end, i, 'utf-8', (e, output, bytesRead) => {
-                                if (e) throw e;
-                                if (bytesRead !== 0) {
-                                    CSV.saveCSV(output.toString(), filename + "_" + chunk);
-                                    i += maxFileSize;
-                                    chunk++;
-                                    writeChunkToFile();
-                                    fs.close(fd);
-                                }
-                            });
-                        }
-                    }
-                }
-                //let file = fs.createWriteStream('./'+State.data.sessionName+'.csv');
-                //file.write(data.toString());
-            });
-        });
-    } else {
-        console.error('File name is not defined.')
+
+//returns an object with the headers and correctly sized outputs (e.g. single values or arrays pushed in columns)
+export async function readCSVChunkFromDB(filename,dir='data',start=0,end='end') {
+
+    
+    let head = await getCSVHeader(filename);
+
+    if(head) head = head.split(',');
+    else return undefined;
+
+    let resultLengths = [];
+    let resultNames = [];
+    let results = {};
+
+    head.forEach((v) => {
+        if(v) {
+            resultNames.push(v);
+            resultLengths.push(1);
+        }
+        else resultLengths[resultLengths.length-1]++;
+    });
+    
+    let size = await getFileSize(filename,dir);
+    if(end === 'end') end = size;
+    else if(end > size) {
+        start = size-(end-start);
+        end = size;
     }
+
+    let data = await readFileChunk(filename,dir,start,end);
+
+    let headeridx = 0;
+    let lastIdx = 0;
+    data.forEach((r,i) => {
+        let row = r.split(',');
+        while(lastIdx < row.length-1) {
+            let l = resultLengths[headeridx]; 
+            if(l === 1) {
+                results[resultNames[headeridx]].push(row[lastIdx]); 
+                lastIdx++;
+            }
+            else {
+                results[resultNames[headeridx]].push(row[lastIdx].slice(lastIdx,l)); 
+                lastIdx+=l;
+            }
+        } 
+    });
+
+    return results;
+
 }
+
+
 
 //pass an object with settings and data to process into CSV format
 /**
@@ -427,3 +531,4 @@ export function toISOLocal(d) { //pass in a new Date(utc timestamp) object
            zz(d.getMilliseconds()) + 
            "(UTC" + sign + z(off/60|0) + ':00)'
 }
+

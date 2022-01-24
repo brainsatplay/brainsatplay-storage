@@ -2,7 +2,7 @@
 //For gapi including and usage: https://developers.google.com/drive/api/v3/quickstart/js
 
 
-import fs from './BFSUtils.js'
+import {fs} from './BFSUtils.js'
 
 //------------------------
 //-GOOGLE DRIVE FUNCTIONS-
