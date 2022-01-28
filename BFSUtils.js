@@ -226,7 +226,7 @@ export const getCSVHeader = async (filename='', dir='data', onopen=(header, file
 }
 
 //
-export const listFiles = (dir='data', onload=(directory)=>{},fs_html_id=undefined) => {
+export const listFiles = async (dir='data', onload=(directory)=>{},fs_html_id=undefined) => {
     return new Promise(resolve => {
         fs.readdir('/'+dir, (e, directory) => {
             if (e) throw e;
