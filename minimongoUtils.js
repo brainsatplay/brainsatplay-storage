@@ -79,7 +79,7 @@ export const readFileChunk = (db, collection, filename='', chunk=undefined, star
     if(end) query.end = end;
     if(!chunk && !(start && end)) return undefined;
     
-    return db[collection].findOne(query,findOneOptions,onsuccess,onerror);
+    return await db[collection].findOne(query,findOneOptions,onsuccess,onerror);
 }
 
 export const writeFile = async (db, collection, filename='', data, onsuccess=(doc)=>{}, onerror=(err)=>{}, props={}, filetype='text/plain', chunkSize=256000) => {
