@@ -19,6 +19,9 @@ try {
     }
 }
 
+// REMOTE DB FUNCTIONALITY:
+// https://github.com/mWater/minimongo#remotedb
+
 //create a remote db
 export const remoteDB = (db,url,client,httpclient,useQuickFind,usePostFind) => {
     db = new minimongo.RemoteDb(url,client,httpclient,useQuickFind,usePostFind);
