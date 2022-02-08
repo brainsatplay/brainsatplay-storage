@@ -55,9 +55,14 @@ export const readFile = (collection, filename='', thisArg) => {
     return db[collection].find(query,thisArg);
 }
 
-export const readFileChunk = (collection, filename='', chunk=0, onsuccess=(doc)=>{}, onerror=(err)=>{}, findOneOptions) => {
+export const readFileChunk = (collection, filename='', chunk=undefined, start=undefined, end=undefined, onsuccess=(doc)=>{}, onerror=(err)=>{}, findOneOptions) => {
     if(!db[collection]) return undefined;
-    let query = {filename, chunk}
+    let query = {filename};
+    if(chunk) query.chunk = chunk;
+    if(start) query.start = start;
+    if(end) query.end = end;
+    if(!chunk && !(start && end)) return undefined;
+    
     return db[collection].findOne(query,findOneOptions,onsuccess,onerror);
 }
 
