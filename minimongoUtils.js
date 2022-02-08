@@ -5,22 +5,27 @@ const minimongo = require("minimongo");
 
 //db default instantiated to local DB, preferably IndexedDB
 export let db; 
-try {
-    db = new minimongo.IndexedDb()
-} catch(err) {
-    try {
-        db = new minimongo.LocalStorageDb()
-    } catch (err2) {
-        try {
-            db = new minimongo.MemoryDb();
-        } catch (err3) {
-            console.error('No DB created!');
-        }
-    }
-}
+db = localDB();
 
 // REMOTE DB FUNCTIONALITY:
 // https://github.com/mWater/minimongo#remotedb
+
+export const localDB = (db) => {
+    try {
+        db = new minimongo.IndexedDb()
+    } catch(err) {
+        try {
+            db = new minimongo.LocalStorageDb()
+        } catch (err2) {
+            try {
+                db = new minimongo.MemoryDb();
+            } catch (err3) {
+                console.error('No DB created!');
+            }
+        }
+    }
+    return db;
+}
 
 //create a remote db
 export const remoteDB = (db,url,client,httpclient,useQuickFind,usePostFind) => {
@@ -35,21 +40,21 @@ export const connectDB = (db,url,client,httpclient,useQuickFind,usePostFind) => 
     return db;
 }
 
-export const readData = async (collection='',query={}) => {
+export const readData = async (db, collection='',query={}) => {
     if(!collection) return undefined;
     if(!db[collection]) db.addCollection(collection);
 
     return await db[collection].findOne(query);
 }
 
-export const writeData = async (collection,data={},onsuccess=(doc)=>{}, onerror=(err)=>{}) => {
+export const writeData = async (db, collection,data={},onsuccess=(doc)=>{}, onerror=(err)=>{}) => {
     if(!collection) return undefined;
     if(!db[collection]) db.addCollection(collection);
 
     return await db[collection].upsert(data,onsuccess, onerror);
 }
 
-export const readFile = (collection, filename='') => {
+export const readFile = (db, collection, filename='') => {
     if(!db[collection]) return undefined;
     let query = {filename};
     let found = db[collection].find(query);
@@ -66,7 +71,7 @@ export const readFile = (collection, filename='') => {
     return result;
 }
 
-export const readFileChunk = (collection, filename='', chunk=undefined, start=undefined, end=undefined, onsuccess=(doc)=>{}, onerror=(err)=>{}, findOneOptions) => {
+export const readFileChunk = (db, collection, filename='', chunk=undefined, start=undefined, end=undefined, onsuccess=(doc)=>{}, onerror=(err)=>{}, findOneOptions) => {
     if(!db[collection]) return undefined;
     let query = {filename};
     if(chunk) query.chunk = chunk;
@@ -77,7 +82,7 @@ export const readFileChunk = (collection, filename='', chunk=undefined, start=un
     return db[collection].findOne(query,findOneOptions,onsuccess,onerror);
 }
 
-export const writeFile = async (collection, filename='', data, onsuccess=(doc)=>{}, onerror=(err)=>{}, props={}, filetype='text/plain', chunkSize=256000) => {
+export const writeFile = async (db, collection, filename='', data, onsuccess=(doc)=>{}, onerror=(err)=>{}, props={}, filetype='text/plain', chunkSize=256000) => {
     let found = db[collection].find({filename});
 
     if(await found.count() > 0) {
@@ -117,7 +122,7 @@ export const writeFile = async (collection, filename='', data, onsuccess=(doc)=>
 }
 
 //add the chunk to the end. This is represented as different objects
-export const appendFile = async (collection, filename='', data, onsuccess=(doc)=>{}, onerror=(err)=>{}, props={}, filetype='text/plain', chunkSize=256000) => {
+export const appendFile = async (db, collection, filename='', data, onsuccess=(doc)=>{}, onerror=(err)=>{}, props={}, filetype='text/plain', chunkSize=256000) => {
     let found = db[collection].find({filename});
 
     let ct = await found.count();
@@ -163,7 +168,7 @@ export const appendFile = async (collection, filename='', data, onsuccess=(doc)=
     }
 }
 
-export const getFilenames = async (collection) => {
+export const getFilenames = async (db, collection) => {
     let found = db[collection].find();
     let filenames = [];
     let ct = await found.count();
@@ -182,7 +187,7 @@ export const getFilenames = async (collection) => {
 
 export const listFiles = getFilenames;
 
-export const getFileSize = async (collection, filename) => {
+export const getFileSize = async (db, collection, filename) => {
     let found = db[collection].find({filename});
 
     let ct = await found.count();
@@ -197,19 +202,19 @@ export const getFileSize = async (collection, filename) => {
     return size;
 }
 
-export const deleteFile = async (collection, query) => {
+export const deleteFile = async (db, collection, query) => {
     return await db[collection].remove(query);
 }
 
 
-export const writeToCSVFromDB = (collection, filename) => {
+export const writeToCSVFromDB = (db, collection, filename) => {
     let text = await readFileAsText(collection, filename);
 
     //now save to CSV (assuming it's already processed into CSV data)
     CSV.saveCSV(text,filename);
 }
 
-export const getCSVHeader = (collection, filename) => {
+export const getCSVHeader = (db, collection, filename) => {
     let found = db[collection].find({filename});
     let result;
     let ct = await found.count();
@@ -227,7 +232,7 @@ export const getCSVHeader = (collection, filename) => {
     return result;
 }
 
-export const readFileAsText = async (collection, filename) => {
+export const readFileAsText = async (db, collection, filename) => {
     let found = db[collection].find({filename});
     let result;
     let ct = await found.count();
