@@ -132,3 +132,122 @@ export const parseCSVData = (
     let result = parser(lines,head,filename);
     return result;
 }
+
+
+
+//pass an object with settings and data to process into CSV format
+/**
+ * option format:
+ * {
+ *  filename: 'filename',
+ *  save: true, //will write a local CSV
+ *  write:true, //will write to indexedDB, appending a file if it already exists
+ *  dir: '/data', //directory if you want to save with browserfs
+ *  header: ['timestamp','UTC','FP1','etc'],
+ *  data: [{ //order of data is order of columns 
+ *      x: [], //e.g. utc times. Used to create rows of data with the first column set to this
+ *      timestamp: [], //e.g. ISO timestamps
+ *      FP1; [1,2,3,4,5] //e.g.  filtered or raw data
+ *    },
+ *    {
+ *      x: [], //e.g. utc times. Will splice rows with different timings into the same CSV
+ *      timestamp: [], //e.g. ISO timestamps     
+ *      FP1_FFT: [[0,1,2,3],[...],...], //e.g. periodic FFT data with different timing. Arrays of arrays get multiple columns
+ *      FP2:[etc],...   
+ *    }]
+ *  }
+ * }
+ * 
+ * result: [
+ *  'timestamp,UTC,FP1,FP1_FFT,...,\n',
+ *  '2012-12-12T12:12:12.000Z,123456,12345,123,...,\n',
+ * ]
+ * 
+ */
+//spits out an array of CSV rows in string format with endlines added
+export const processDataForCSV = (options={}) => {
+    let header = '';
+    if(typeof options.data[0] === 'object' && !Array.isArray(options.data[0])){
+        if(options.data[0].x) header = 'x,';
+        else if (options.data[0].timestamp) header = 'timestamp,localtime,';
+    }
+
+    let headeridx = 0;
+    let lines = {}; //associative array (e.g. timestamp = row)
+    options.data.forEach((obj, i) => {
+        if(Array.isArray(obj)) { //unstructured data just gets pushed into a column
+            for(let j = 0; j < obj.length; j++) {
+                if(!lines[j]) lines[j] = '';
+                
+                if(Array.isArray(obj[j])) {
+                    if(j === 0) header[headeridx] += options.header[headeridx]+new Array(obj[j].length-1).fill('').join(','); //add empty spaces
+                    lines[j] += obj[j].join(',') + ',';
+                    headeridx+=obj[j].length;
+                }
+                else {
+                    if(j === 0) header[headeridx] += options.header[headeridx]+',';
+                    lines[j] += obj[j] + ',';
+                    headeridx++;
+                }
+            }
+        } else if (typeof obj === 'object'){
+            let x;
+            if(obj.x) {
+               x = obj.x; 
+            } else if (obj.timestamp) {
+                x = obj.timestamp;
+            }
+            for(let j = 0; j < x.length; j++) {
+                
+                if(!lines[x[j]]) lines[x[j]] = x[j] + ',';
+                if(obj.timestamp) {
+                    lines[x[j]] += toISOLocal(obj.timestamp[j]) + ','; //add local timezone data
+                } 
+
+                for(const prop in obj) {
+                    if(prop !== 'x') {
+                        if(!lines[x[j]]) lines[x[j]] = '';
+                
+                        if(Array.isArray(obj[prop][j])) {
+                            if(j === 0) header[headeridx] += options.header[headeridx]+Array(obj[prop][j].length-1).fill('').join(','); //add empty spaces
+                            lines[x[j]] += obj[prop][j].join(',') + ',';
+                            headeridx+=obj[prop][j].length;
+                        }
+                        else {
+                            if(j === 0) header[headeridx] += options.header[headeridx]+',';
+                            lines[x[j]] += obj[prop][j] + ',';
+                            headeridx++;
+                        }
+                    }
+                }
+            }  
+        }
+    });
+
+    header.splice(header.length-1,1); //remove last comma
+    header += '\n';
+
+    let joined = '';
+
+    for(const prop in lines) {
+        lines[prop].splice(lines[prop].length-1,1); //splice off the trailing comma
+        joined +=  lines[prop] + '\n'; //add a newline
+    }
+
+    let result = {filename:options.filename,header:header,body:joined};
+
+    if(options.save) {
+        CSV.saveCSV(header+joined,options.filename);
+    }
+
+    if(options.write) {
+        fs.exists(options.filename, (exists) => {
+            if(exists) 
+                appendFile(options.filename, joined, options.dir);
+            else
+                appendFile(options.filename, header+joined, options.dir);
+        });
+    }
+
+    return result;
+}
