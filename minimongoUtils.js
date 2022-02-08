@@ -28,7 +28,7 @@ export const remoteDB = (db,url,client,httpclient,useQuickFind,usePostFind) => {
     return db;
 } 
 
-//replaces the input db with a hybrid db
+//replaces the input db with a hybrid db: https://github.com/mWater/minimongo#hybriddb
 export const connectDB = (db,url,client,httpclient,useQuickFind,usePostFind) => {
     let remote = new minimongo.RemoteDb(url,client,httpclient,useQuickFind,usePostFind)
     db = new minimongo.HybridDb(db, remote); //locally accessible, and lazy loads from DB
