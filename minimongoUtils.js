@@ -35,24 +35,35 @@ export const connectDB = (db,url,client,httpclient,useQuickFind,usePostFind) => 
     return db;
 }
 
-export const readData = (collection='',query={}) => {
+export const readData = async (collection='',query={}) => {
     if(!collection) return undefined;
     if(!db[collection]) db.addCollection(collection);
 
-    return db[collection].findOne(query);
+    return await db[collection].findOne(query);
 }
 
-export const writeData = (collection,data={},onsuccess=(doc)=>{}, onerror=(err)=>{}) => {
+export const writeData = async (collection,data={},onsuccess=(doc)=>{}, onerror=(err)=>{}) => {
     if(!collection) return undefined;
     if(!db[collection]) db.addCollection(collection);
 
-    db[collection].upsert(data,onsuccess, onerror);
+    return await db[collection].upsert(data,onsuccess, onerror);
 }
 
-export const readFile = (collection, filename='', thisArg) => {
+export const readFile = (collection, filename='') => {
     if(!db[collection]) return undefined;
-    let query = {filename}
-    return db[collection].find(query,thisArg);
+    let query = {filename};
+    let found = db[collection].find(query);
+    let ct = await found.count();
+    
+    let result;
+    if(ct > 0) {
+        result = [];
+        await Promise.all(found.map(async (s) => {
+            result.push(s); //return the file chunks or just the file
+        }));
+    }
+
+    return result;
 }
 
 export const readFileChunk = (collection, filename='', chunk=undefined, start=undefined, end=undefined, onsuccess=(doc)=>{}, onerror=(err)=>{}, findOneOptions) => {
