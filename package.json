@@ -1,6 +1,6 @@
 {
     "name": "brainsatplay-storage",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "IndexedDB (via BrowserFS), CSV, and Google Drive tools for Brainsatplay data",
     "main": "index.js",
     "directories": {
@@ -22,7 +22,8 @@
     "author": "Joshua Brewster",
     "license": "AGPL-3.0-or-later",
     "dependencies": {
-        "browserfs": "^1.4.3"
+        "browserfs": "^1.4.3",
+        "minimongo": "^6.11.5"
     },
     "bugs": {
         "url": "https://github.com/brainsatplay/brainsatplay-storage/issues"

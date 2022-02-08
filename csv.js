@@ -97,3 +97,38 @@ export class CSV { //data=["1|2","11|22"], or data=[[1,2,"xyz"],[2,3,"abc"],etc]
         console.log("CSV Opened!",header, csvDat);
     }
 }
+
+
+
+//e.g. let csv = CSV.openCSV(',',(data,head,path) => {
+//   let name = path.split('/').pop();
+//   result = parseCSVData(data,head,name);
+//   console.log(result);
+//})
+export const parseCSVData = (
+    data,
+    head,
+    filename,
+    hasend=true,
+    parser=(lines,head,filename) => { //generic parser for CSV files
+        let result = {filename:filename,head:head};
+        let headers = head; if(typeof head === 'string') headers = head.split(',');
+        for(let i = 0; i < lines.length; i++){
+            let line = lines[i].split(',');
+            for(let j = 0; j < line.length; j++){
+                if(!result[headers[j]]) result[headers[j]]
+                result[headers[j]] = line[j];
+            }
+        }
+    
+        return result; 
+    
+    }
+) => {
+    let lines = data.split('\n'); 
+    lines.shift(); 
+
+    if(hasend === false) lines.pop(); //pop last row if they are likely incomplete
+    let result = parser(lines,head,filename);
+    return result;
+}
