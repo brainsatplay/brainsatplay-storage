@@ -35,7 +35,7 @@ export const backupToDrive = (filename,directory='/data') => {
         fs.readFile(directory+'/'+filename,(e,output)=>{
             if(e) throw e;
             let file = new Blob([output.toString()],{type:'text/csv'});
-            this.checkFolder((result)=>{
+            checkFolder((result)=>{
                 let metadata = {
                     'name':filename+".csv",
                     'mimeType':'application/vnd.google-apps.spreadsheet',
@@ -52,7 +52,7 @@ export const backupToDrive = (filename,directory='/data') => {
                 xhr.responseType = 'json';
                 xhr.onload = () => {
                     console.log("Uploaded file id: ",xhr.response.id); // Retrieve uploaded file ID.
-                    this.listDriveFiles();
+                    listDriveFiles();
                 };
                 xhr.send(form);
             });   

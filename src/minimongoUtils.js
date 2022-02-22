@@ -1,4 +1,4 @@
-import { CSV } from ".";
+import { CSV } from "./csv.js";
 
 const minimongo = require("minimongo");
 
@@ -54,7 +54,7 @@ export const writeData = async (db, collection,data={},onsuccess=(doc)=>{}, oner
     return await db[collection].upsert(data,onsuccess, onerror);
 }
 
-export const readFile = (db, collection, filename='') => {
+export const readFile = async (db, collection, filename='') => {
     if(!db[collection]) return undefined;
     let query = {filename};
     let found = db[collection].find(query);
@@ -71,7 +71,7 @@ export const readFile = (db, collection, filename='') => {
     return result;
 }
 
-export const readFileChunk = (db, collection, filename='', chunk=undefined, start=undefined, end=undefined, onsuccess=(doc)=>{}, onerror=(err)=>{}, findOneOptions) => {
+export const readFileChunk = async (db, collection, filename='', chunk=undefined, start=undefined, end=undefined, onsuccess=(doc)=>{}, onerror=(err)=>{}, findOneOptions) => {
     if(!db[collection]) return undefined;
     let query = {filename};
     if(chunk) query.chunk = chunk;
@@ -207,14 +207,14 @@ export const deleteFile = async (db, collection, query) => {
 }
 
 
-export const writeToCSVFromDB = (db, collection, filename) => {
+export const writeToCSVFromDB = async (db, collection, filename) => {
     let text = await readFileAsText(collection, filename);
 
     //now save to CSV (assuming it's already processed into CSV data)
     CSV.saveCSV(text,filename);
 }
 
-export const getCSVHeader = (db, collection, filename) => {
+export const getCSVHeader = async (db, collection, filename) => {
     let found = db[collection].find({filename});
     let result;
     let ct = await found.count();

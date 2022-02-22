@@ -1,0 +1,16 @@
+export function readFileChunk(filename?: string, dir?: string, begin?: number, end?: number, onread?: (data: any) => void): Promise<any>;
+export function readCSVChunkFromDB(filename: any, dir?: string, start?: number, end?: string): Promise<{} | undefined>;
+export const fs: import("browserfs/dist/node/core/FS").FSModule;
+export function initFS(oninit?: () => void, onerror?: () => void): Promise<any>;
+export function readFile(filename?: string, dir?: string): Promise<any>;
+export function saveFile(content: any, filename?: string, dir?: string): Promise<any>;
+export function _checkDirectoryExistence(fs: any, directory: any): Promise<any>;
+export function getFilenames(onload?: (directory: any) => void, directory?: string): Promise<any>;
+export function getFileSize(filename: any, dir?: string, onread?: (size: any) => void): Promise<any>;
+export function writeFile(filename: any, data: any, dir?: string, onwrite?: (data: any) => void): Promise<any>;
+export function appendFile(filename: any, data: any, dir?: string, onwrite?: (data: any) => void): Promise<any>;
+export function deleteFile(filename?: string, dir?: string, ondelete?: (dir?: string, onload?: (directory: any) => void, fs_html_id?: undefined) => Promise<any>): Promise<any>;
+export function readFileAsText(filename?: string, dir?: string, onread?: (data: any, filename: any) => void): Promise<any>;
+export function getCSVHeader(filename?: string, dir?: string, onopen?: (header: any, filename: any) => void): Promise<any>;
+export function listFiles(dir?: string, onload?: (directory: any) => void, fs_html_id?: undefined): Promise<any>;
+export function writeToCSVFromDB(filename?: string, dir?: string, fileSizeLimitMb?: number): Promise<any>;
