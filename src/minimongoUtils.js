@@ -1,11 +1,13 @@
 import { CSV } from "./csv.js";
 
-const minimongo = require("minimongo");
+//const minimongo = require("minimongo");
 
 
 //db default instantiated to local DB, preferably IndexedDB
 export let db; 
-db = localDB();
+
+if(typeof minimongo !== 'undefined')
+    db = localDB();
 
 // REMOTE DB FUNCTIONALITY:
 // https://github.com/mWater/minimongo#remotedb
