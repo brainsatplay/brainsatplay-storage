@@ -37,7 +37,7 @@ export async function readFileChunk (filename='sessionName', dir='data', begin =
                             onread(data,filename);
                             resolve(data);
                         });
-                    }
+                    } else resolve(undefined);
                 });
             });
         });
@@ -57,6 +57,7 @@ export const getFilenames = (onload=(directory)=>{}, directory = '/data') => {
                 onload(dir);
                 resolve(dir);
             }
+            else resolve(undefined);
         });
     });
 }
@@ -155,7 +156,8 @@ export const getCSVHeader = async (filename='', dir='data', onopen=(header, file
                         onopen(header, filename);
                         resolve(header);
                     });
-                };
+                }
+                else resolve(undefined);
             }); 
         });
     });
