@@ -30,3 +30,42 @@ function isDataURL(s) {
     return !!s.match(isDataURL.regex);
 }
 isDataURL.regex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
+
+
+//can write data to blobs and automatically chunk the file buffers into storage objects
+export async function dataToBlob(
+    data, 
+    filetype='text/plain', 
+    chunkSize=256000 //if file bigger than chunk size, split it up automatically into smaller blobs with metadata
+) {
+    let file = {filename, data: new Blob([data],{filetype:filetype})};
+    Object.assign(file,props);
+
+    if(file.data.size > chunkSize) {
+        const size = file.data.size;
+        let written = 0;
+        let i = 0;
+        let chunks = [];
+        while(written < size) {
+            let end = written+chunkSize;
+            if(end > size) end = size;
+
+            let slice = undefined;
+            if(filetype === 'text/plain')  { 
+                slice = await file.data.slice(written,end).text();
+            } else {
+                slice = await file.data.slice(written,end).arrayBuffer();
+            }
+            if(slice) {
+                let chunk = {filename, data: new Blob([slice],{type:filetype}), chunk:i, start:written, end:end};
+                Object.assign(chunk,props);
+                chunks.push(chunk);
+            }
+
+            written += chunkSize;
+            i++;
+        }
+        return chunks;
+    } else return file;
+
+}

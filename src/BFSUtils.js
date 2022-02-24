@@ -10,34 +10,6 @@ const BFSBuffer = BrowserFS.BFSRequire('buffer').Buffer;
 
 
 // ----------------------------- Generic Functions for BrowserFS -----------------------------
-export const initFS = async (oninit=()=>{}, onerror=()=>{}) => {
-    if (fsInited) return true
-    else {
-    return new Promise (resolve => {
-        let oldmfs = fs.getRootFS();
-        BrowserFS.FileSystem.IndexedDB.Create({}, (e, rootForMfs) => {
-            if (e) throw e;
-            if (!rootForMfs) {
-                onerror();
-                throw new Error(`Error creating BrowserFS`);
-            }
-            BrowserFS.initialize(rootForMfs); //fs now usable with imports after this
-
-        let p1 = _checkDirectoryExistence(fs, 'data')
-        let p2 = _checkDirectoryExistence(fs, 'projects')
-        let p3 = _checkDirectoryExistence(fs, 'extensions')
-        let p4 = _checkDirectoryExistence(fs, 'settings')
-        let p5 = _checkDirectoryExistence(fs, 'plugins')
-
-        Promise.all([p1,p2, p3, p4, p5]).then((values) => {
-            oninit();
-            fsInited = true
-            resolve(true)
-        })
-    })
-})
-    }
-}
 
 export const readFile = async (filename='sessionName',dir='data') => {
     if (!fsInited) await initFS()
@@ -50,7 +22,6 @@ export const readFile = async (filename='sessionName',dir='data') => {
 
 
 export async function readFileChunk (filename='sessionName', dir='data', begin = 0, end = 5120, onread=(data)=>{}) {
-    
     
     if (filename != ''){
         return new Promise(async resolve => { 
@@ -76,50 +47,6 @@ export async function readFileChunk (filename='sessionName', dir='data', begin =
     }
 }
 
-export const saveFile = async (content, filename='sessionName',dir='data') => {
-    
-    if (!fsInited) await initFS()
-    // Assumes content is text
-    return new Promise(async resolve => {
-
-        await _checkDirectoryExistence(fs, dir)
-
-        fs.writeFile('/'+dir+'/'+filename,content,(e)=>{
-            if(e) throw e;
-            resolve(content)
-        });
-    })
-}
-
-let directories = {};
-export const _checkDirectoryExistence = async (fs, directory) => {
-    return new Promise(resolve => {
-        if (directories[directory] === 'exists' || directories[directory] === 'created'){
-            resolve()
-        } else {
-            fs.exists(`/${directory}`, (exists) => {
-                if (exists) {
-                    directories[directory] = 'exists'
-                    console.log(`/${directory} exists!`)
-                    resolve();
-                }
-                else if (directories[directory] === 'creating'){
-                    console.log(directory + ' is still being created.')
-                }
-                else {
-                    console.log('creating ' + directory)
-                    directories[directory] = 'creating'
-                    fs.mkdir(directory, (err) => {
-                        if (err) throw err;
-                        directories[directory] = 'created'
-                        setTimeout(resolve, 500)
-                    });
-                }
-
-            });
-        }
-    });
-}
 
 export const getFilenames = (onload=(directory)=>{}, directory = '/data') => {
     return new Promise(resolve => {
@@ -130,17 +57,6 @@ export const getFilenames = (onload=(directory)=>{}, directory = '/data') => {
                 onload(dir);
                 resolve(dir);
             }
-        });
-    });
-}
-
-export const getFileSize = async (filename,dir='data',onread=(size)=>{console.log(size);}) => {
-    return new Promise(resolve => {
-        fs.stat('/'+dir + '/' +filename,(e,stats) => {
-            if(e) throw e;
-            let filesize = stats.size;
-            onread(filesize);
-            resolve(filesize);
         });
     });
 }
@@ -183,8 +99,14 @@ export const deleteFile = (filename='sessionName', dir='data', ondelete=listFile
 }
 
 //read a browserfs file
-export const readFileAsText = async (filename='sessionName.csv', dir='data', onread=(data,filename)=>{console.log(filename,data);}) => {
-    return new Promise(resolve => {
+export const readFileAsText = async (
+    filename='sessionName.csv', 
+    dir='data', 
+    onread=(data,filename)=>{
+        //console.log(filename,data);
+    }) => {
+    
+        return new Promise(resolve => {
         fs.open('/'+dir+'/'+filename, 'r', (e, fd) => {
             if (e) throw e;
             fs.read(fd, end, begin, 'utf-8', (er, output, bytesRead) => {
@@ -196,8 +118,22 @@ export const readFileAsText = async (filename='sessionName.csv', dir='data', onr
                         onread(data,filename);
                         resolve(data);
                     });
-                };
+                } else resolve(undefined);
             });
+        });
+    });
+}
+
+
+
+
+export const getFileSize = async (filename,dir='data',onread=(size)=>{console.log(size);}) => {
+    return new Promise(resolve => {
+        fs.stat('/'+dir + '/' +filename,(e,stats) => {
+            if(e) throw e;
+            let filesize = stats.size;
+            onread(filesize);
+            resolve(filesize);
         });
     });
 }
@@ -363,3 +299,77 @@ export async function readCSVChunkFromDB(filename,dir='data',start=0,end='end') 
 
 }
 
+export const initFS = async (oninit=()=>{}, onerror=()=>{}) => {
+    if (fsInited) return true
+    else {
+    return new Promise (resolve => {
+        let oldmfs = fs.getRootFS();
+        BrowserFS.FileSystem.IndexedDB.Create({}, (e, rootForMfs) => {
+            if (e) throw e;
+            if (!rootForMfs) {
+                onerror();
+                throw new Error(`Error creating BrowserFS`);
+            }
+            BrowserFS.initialize(rootForMfs); //fs now usable with imports after this
+
+        let p1 = dirExists(fs, 'data')
+        let p2 = dirExists(fs, 'projects')
+        let p3 = dirExists(fs, 'extensions')
+        let p4 = dirExists(fs, 'settings')
+        let p5 = dirExists(fs, 'plugins')
+
+        Promise.all([p1,p2, p3, p4, p5]).then((values) => {
+            oninit();
+            fsInited = true
+            resolve(true)
+        })
+    })
+})
+    }
+}
+
+export const saveToFS = async (data, filename='sessionName',dir='data') => {
+    
+    if (!fsInited) await initFS()
+    // Assumes content is text
+    return new Promise(async resolve => {
+
+        await dirExists(fs, dir)
+
+        fs.writeFile('/'+dir+'/'+filename,data,(e)=>{
+            if(e) throw e;
+            resolve(data);
+        });
+    })
+}
+
+let directories = {};
+export const dirExists = async (fs, directory) => {
+    return new Promise(resolve => {
+        if (directories[directory] === 'exists' || directories[directory] === 'created'){
+            resolve()
+        } else {
+            fs.exists(`/${directory}`, (exists) => {
+                if (exists) {
+                    directories[directory] = 'exists'
+                    console.log(`/${directory} exists!`)
+                    resolve();
+                }
+                else if (directories[directory] === 'creating'){
+                    console.log(directory + ' is still being created.')
+                    resolve();
+                }
+                else {
+                    console.log('creating ' + directory)
+                    directories[directory] = 'creating'
+                    fs.mkdir(directory, (err) => {
+                        if (err) throw err;
+                        directories[directory] = 'created'
+                        setTimeout(resolve, 500)
+                    });
+                }
+
+            });
+        }
+    });
+}

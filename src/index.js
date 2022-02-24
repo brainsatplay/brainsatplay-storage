@@ -1,4 +1,4 @@
-import * as fs from './BFSUtils'
+import * as bfs from './BFSUtils'
 import * as drive from './GDriveUtils'
 import * as csv from './csv'
 import * as blob from './blobUtils'
@@ -6,7 +6,7 @@ import * as minimongo from './minimongoUtils'
 export {
     blob,
     csv,
-    fs,
+    bfs,
     drive,
     minimongo
 }
