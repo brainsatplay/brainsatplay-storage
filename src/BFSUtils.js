@@ -10,6 +10,40 @@ const BFSBuffer = BrowserFS.BFSRequire('buffer').Buffer;
 
 
 // ----------------------------- Generic Functions for BrowserFS -----------------------------
+export const initFS = async (
+    dirs = ['data','projects','extensions','settings','plugins'],
+    oninit=()=>{}, 
+    onerror=()=>{}
+) => {
+    if (fsInited) return true
+    else {
+    return new Promise (resolve => {
+        let oldmfs = fs.getRootFS();
+        BrowserFS.FileSystem.IndexedDB.Create({}, (e, rootForMfs) => {
+            if (e) throw e;
+            if (!rootForMfs) {
+                onerror();
+                throw new Error(`Error creating BrowserFS`);
+            }
+            BrowserFS.initialize(rootForMfs); //fs now usable with imports after this
+
+        let promises = [];
+
+        dirs.forEach(async (dir) => {
+            promises.push(dirExists(fs,dir));
+        })
+
+        Promise.all(promises).then((values) => {
+            oninit();
+            fsInited = true
+            resolve(true)
+        })
+    })
+})
+    }
+}
+
+
 
 export const readFile = async (filename='sessionName',dir='data') => {
     if (!fsInited) await initFS()
@@ -301,34 +335,6 @@ export async function readCSVChunkFromDB(filename,dir='data',start=0,end='end') 
 
 }
 
-export const initFS = async (oninit=()=>{}, onerror=()=>{}) => {
-    if (fsInited) return true
-    else {
-    return new Promise (resolve => {
-        let oldmfs = fs.getRootFS();
-        BrowserFS.FileSystem.IndexedDB.Create({}, (e, rootForMfs) => {
-            if (e) throw e;
-            if (!rootForMfs) {
-                onerror();
-                throw new Error(`Error creating BrowserFS`);
-            }
-            BrowserFS.initialize(rootForMfs); //fs now usable with imports after this
-
-        let p1 = dirExists(fs, 'data')
-        let p2 = dirExists(fs, 'projects')
-        let p3 = dirExists(fs, 'extensions')
-        let p4 = dirExists(fs, 'settings')
-        let p5 = dirExists(fs, 'plugins')
-
-        Promise.all([p1,p2, p3, p4, p5]).then((values) => {
-            oninit();
-            fsInited = true
-            resolve(true)
-        })
-    })
-})
-    }
-}
 
 export const saveToFS = async (data, filename='sessionName',dir='data') => {
     
