@@ -1,6 +1,6 @@
 {
     "name": "brainsatplay-storage",
-    "version": "0.0.17",
+    "version": "0.0.18",
     "description": "IndexedDB (via BrowserFS), CSV, and Google Drive tools for Brainsatplay data",
     "main": "dist/index.js",
     "module": "dist/index.esm.js",

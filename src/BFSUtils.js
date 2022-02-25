@@ -107,7 +107,6 @@ export const writeFile = async (filename, data, dir='data', onwrite=(data)=>{}) 
     return new Promise(resolve => {
         fs.writeFile('/'+dir+'/'+filename, data, (err) => {
             if (err) throw err;
-            console.log('The "data to append" was appended to file!');
             onwrite(data);
             resolve(true);
         });
@@ -118,7 +117,6 @@ export const appendFile = async (filename, data, dir='data', onwrite=(data)=>{})
     return new Promise(resolve => {
         fs.appendFile('/'+dir+'/'+filename, data, (err) => {
             if (err) throw err;
-            console.log('The "data to append" was appended to file!');
             onwrite(data);
             resolve(true);
         });
