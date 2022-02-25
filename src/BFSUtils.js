@@ -43,6 +43,13 @@ export const initFS = async (
     }
 }
 
+export const exists = async (filename='',dir='data') => {
+    return new Promise(resolve => {
+        fs.exists('/'+dir+'/'+filename, function(exists) {
+            resolve(exists);
+        });
+    })
+}
 
 
 export const readFile = async (filename='sessionName',dir='data') => {
@@ -137,11 +144,22 @@ export const deleteFile = (filename='sessionName', dir='data', ondelete=listFile
 export const readFileAsText = async (
     filename='sessionName.csv', 
     dir='data', 
+    end='end',
+    begin=0,
     onread=(data,filename)=>{
         //console.log(filename,data);
     }) => {
     
-        return new Promise(resolve => {
+    return new Promise(async resolve => {
+
+        let size = await getFileSize(filename,dir)
+        
+        if(end === 'end') {
+            end = size;
+        } else if (typeof end === 'number') {
+            if(end > size) end = size;
+        }
+
         fs.open('/'+dir+'/'+filename, 'r', (e, fd) => {
             if (e) throw e;
             fs.read(fd, end, begin, 'utf-8', (er, output, bytesRead) => {
